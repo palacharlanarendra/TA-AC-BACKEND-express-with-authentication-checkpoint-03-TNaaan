@@ -4,6 +4,7 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var mongoose = require('mongoose');
+var flash = require('connect-flash');
 var session = require('express-session');
 var MongoStore = require('connect-mongo');
 var passport = require('passport');
@@ -47,7 +48,7 @@ app.use(
     }),
   })
 );
-
+app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());
 
