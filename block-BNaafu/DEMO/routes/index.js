@@ -1,7 +1,8 @@
 var express = require('express');
 var router = express.Router();
 var passport = require('passport');
-const isLoggedIn = require('../middleware/auth');
+// const isLoggedIn = require('../middleware/auth');
+var auth = require('../middleware/auth');
 /* GET home page. */
 router.get('/', function (req, res, next) {
   res.render('index', { title: 'Express' });
@@ -39,7 +40,7 @@ router.get(
     res.redirect('/success');
   }
 );
-router.get('/logout', isLoggedIn, function (req, res) {
+router.get('/logout', auth.isLoggedIn, function (req, res) {
   console.log(req.session);
   req.session.destroy(function (e) {
     req.logout();
