@@ -9,6 +9,7 @@ var userSchema = new Schema(
     password: { type: String },
     isVerified: { type: Boolean },
     emailToken: { type: String },
+    random: { type: Number },
   },
   { timestamps: true }
 );
