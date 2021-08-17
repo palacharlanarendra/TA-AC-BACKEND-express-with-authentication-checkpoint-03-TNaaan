@@ -11,8 +11,7 @@
     <p>success</p>
     <div><a href="/logout">logout</a></div>
     <div>
-      <p><%=email%></p>
-      <form action="/dashboard/income/<%=email%>" method="POST">
+      <form action="/dashboard/income" , method="POST">
         <legend>Add Income data</legend>
         <input type="text" name="source" placeholder="Enter source" />
         <input type="number" name="incomeAmount" placeholder="Enter amount" />
@@ -21,7 +20,7 @@
       </form>
     </div>
     <div>
-      <form action="/dashboard/expense/<%=email%>" , method="POST">
+      <form action="/dashboard/expense" , method="POST">
         <legend>Add expense data</legend>
         <input type="text" name="category" placeholder="Enter category" />
         <input type="number" name="expenseAmount" placeholder="Enter amount" />
@@ -31,5 +30,27 @@
     </div>
     <p><%=income%></p>
     <p><%=expense%></p>
+    <section>
+      <%if(expense.length>0){%>
+      <article>
+        <%expense.forEach((expense)=>{%>
+        <h3><%=expense.category%></h3>
+        <p><%=expense.expenseAmount%></p>
+        <p><%=expense.expenseDate%></p>
+        <%})%>
+      </article>
+      <%}%>
+    </section>
+    <section>
+      <%if(income.length>0){%>
+      <article>
+        <%income.forEach((income)=>{%>
+        <h3><%=income.source%></h3>
+        <p><%=income.incomeAmount%></p>
+        <p><%=income.incomeDate%></p>
+        <%})%>
+      </article>
+      <%}%>
+    </section>
   </body>
 </html>

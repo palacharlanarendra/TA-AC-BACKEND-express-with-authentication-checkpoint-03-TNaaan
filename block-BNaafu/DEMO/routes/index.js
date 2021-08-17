@@ -40,7 +40,7 @@ router.get(
     res.redirect('/success');
   }
 );
-router.get('/logout', auth.isLoggedIn, function (req, res) {
+router.get('/logout', function (req, res) {
   console.log(req.session);
   req.session.destroy(function (e) {
     req.logout();

@@ -5,11 +5,22 @@ const nodemailer = require('nodemailer');
 var router = express.Router();
 var User = require('../models/User');
 var auth = require('../middleware/auth');
+var mg = require('nodemailer-mailgun-transport');
+var bcrypt = require('bcrypt');
+var Income = require('../models/incomeModel');
+var Expense = require('../models/expenseModel');
 // const { isLoggedIn, isNotVerified } = require('../middleware/auth');
 /* GET users listing. */
-router.get('/', function (req, res, next) {
-  console.log(req.session);
-  res.render('logged');
+
+router.get('/', (req, res, next) => {
+  var userEmail = req.user.email;
+  console.log(userEmail);
+  // var email = req.user.email;
+  // Income.find({ userEmail }, (err, income) => {
+  //   Expense.find({ userEmail }, (err, expense) => {
+  //     res.render('details', { expense, income, email });
+  //   });
+  // });
 });
 router.get('/register', function (req, res, next) {
   res.render('register');
@@ -31,42 +42,38 @@ router.post('/register', async (req, res) => {
   });
 
   User.register(user, req.body.password, async function (err, user) {
-    console.log('user,err', user, err, req);
     if (err) {
-      console.log('enterd1');
       req.flash('error', err.message);
       return res.redirect('/users/register');
     } else if (user) {
-      // Step 1
-      console.log('enterd2');
-      let transporter = nodemailer.createTransport({
-        service: 'gmail',
+      var auth = {
         auth: {
-          user: 'taruntej.me@gmail.com',
-          pass: 'iamahack',
+          api_key: 'af27c69572207b9e1cf6e34f16d5b5dc-64574a68-de32e4a7',
+          domain: 'sandboxcf73c7e45f0249f8a8b5efd168bef94a.mailgun.org',
         },
-      });
-
-      // Step 2
-      var mailOptions = {
-        from: 'taruntej.me@gmail.com',
-        to: req.body.email,
-        subject: 'Download your files',
-        text: `Hello user , thanks for registering  on our site , please click the link below
-          http://${req.headers.host}/users/verify-email?token=${user.emailToken}`,
       };
 
-      // Step 3
-      transporter.sendMail(mailOptions, (err, data) => {
-        var emailSent = 'Email Successfully Sent!';
-        var emailerror = 'Error Occured while Sending Mail!';
-        if (err) {
-          console.log(emailerror);
-          return res.redirect('/');
+      var nodemailerMailgun = nodemailer.createTransport(mg(auth));
+
+      nodemailerMailgun.sendMail(
+        {
+          from: 'myemail@example.com',
+          to: req.body.email,
+          subject: 'verification link',
+          text: `Hello user , thanks for registering  on our site , please click the link below
+          http://${req.headers.host}/users/verify-email?token=${user.emailToken}`,
+        },
+        function (err, info) {
+          if (err) {
+            console.log('Error: ' + err);
+            console.log(req.flash('error', err));
+            return res.redirect('/');
+          } else {
+            console.log('email Sent');
+            return res.redirect('/users/login');
+          }
         }
-        console.log(emailSent);
-        return res.redirect('/users/login');
-      });
+      );
     }
   });
 });
@@ -75,7 +82,7 @@ router.get('/verify-email', async (req, res, next) => {
   try {
     const user = await User.findOne({ emailToken: req.query.token });
     if (!user) {
-      req.flash('error ,token is invalid');
+      req.flash('error', 'token is invalid');
       return res.redirect('/');
     }
     user.emailToken = null;
@@ -101,72 +108,136 @@ router.get('/verify-email', async (req, res, next) => {
 router.get('/login', function (req, res, next) {
   res.render('login');
 });
-router.get('/loginSuccess', function (req, res, next) {
-  let email = req.session.email;
+router.get('/loginSuccess/:email', function (req, res, next) {
+  var email = req.params.email;
+  var userEmail = email;
   User.findOne({ email }, (err, user) => {
-    res.render('success');
+    Income.find({ userEmail }, (err, income) => {
+      Expense.find({ userEmail }, (err, expense) => {
+        res.render('success', { user, expense, income, email });
+      });
+    });
   });
 });
 
-// router.post(
-//   '/login',
-//   isNotVerified,
-//   passport.authenticate('local', {
-//     successRedirect: '/users/loginSuccess',
-//     failureRedirect: '/users/login',
-//   }),
-//   function (req, res) {}
-// );
-
 router.post('/login', auth.isNotVerified, function (req, res, next) {
   passport.authenticate('local', function (err, user, info) {
-    console.log(user);
+    console.log('mmmmmmmm', user);
     if (user) {
-      return res.redirect('/users/loginSuccess');
+      return res.redirect(`/users/loginSuccess/${user.email}`);
     }
     return res.redirect('/users/login');
   })(req, res, next);
 });
-// router.post('/login', function (req, res, next) {
-//   passport.authenticate('local', function (err, user, info) {
-//     console.log(user);
-//     if (user) {
-//       return res.redirect('/users/loginSuccess');
-//     }
-//     return res.redirect('/users/login');
-//   })(req, res, next);
-// });
 
-// router.post('/login', passport.authenticate('local'), function (req, res) {
-//   console.log('passport user', req, res);
-// });
-// router.post('/login', (req, res, next) => {
-//   var { email, password } = req.body;
-//   if (!email || !password) {
-//     return res.redirect('/users/login');
-//   }
-//   User.findOne({ email }, (err, user) => {
-//     if (err) return next(err);
-//     if (!user) {
-//       return res.redirect('/users/login');
-//     }
-//     user.verifyPassword(password, (err, result) => {
-//       if (err) return next(err);
-//       console.log(result);
-//       if (!result) {
-//         console.log(password);
-//         return res.redirect('/users/login');
-//       }
-//       req.session.userId = user.id;
-//       req.session.email = user.email;
-//       res.redirect('/users/loginSuccess');
-//     });
-//   });
-// });
-// router.get('/logout', function (req, res, next) {
-//   req.session.destroy();
-//   res.clearCookie('connect.sid');
-//   res.redirect('/users/login');
-// });
+//render forgot password page
+router.get('/login/forgotpassword', (req, res, next) => {
+  let error = req.flash('error')[0];
+  let info = req.flash('info')[0];
+  res.render('forgotPassword', { error, info });
+});
+function random() {
+  return Math.floor(100000 + Math.random() * 900000);
+}
+//process forgot password
+router.post('/login/forgotpassword', (req, res, next) => {
+  var { email } = req.body;
+  console.log('WWWWWWWWW', email);
+  req.body.random = random();
+  console.log(req.body.random);
+  User.findOneAndUpdate({ email }, req.body, (err, user) => {
+    if (err) return next(err);
+
+    if (!user) {
+      req.flash(
+        'error',
+        'The Email entered is not Registered, Please entered the registered Email'
+      );
+      return res.redirect('/users/login/forgotpassword');
+    }
+    var auth = {
+      auth: {
+        api_key: 'af27c69572207b9e1cf6e34f16d5b5dc-64574a68-de32e4a7',
+        domain: 'sandboxcf73c7e45f0249f8a8b5efd168bef94a.mailgun.org',
+      },
+    };
+
+    var nodemailerMailgun = nodemailer.createTransport(mg(auth));
+
+    nodemailerMailgun.sendMail(
+      {
+        from: 'myemail@example.com',
+        to: req.body.email,
+        subject: 'password change',
+        html: `<h1>${req.body.random}</h1>
+       <h2>Please Copy above 6 digit number and click this link http://localhost:3000/users/login/resetpassword/verify/${req.body.email} </h2>`,
+      },
+      function (err, info) {
+        if (err) {
+          console.log('Error: ' + err);
+          return res.redirect('/');
+        } else {
+          console.log('email Sent');
+          return res.redirect('/users/login/forgotpassword');
+        }
+      }
+    );
+  });
+});
+
+//render reset password verification code page
+router.get('/login/resetpassword/verify/:slug', (req, res, next) => {
+  var email = req.params.slug;
+
+  console.log(email, 'something');
+  let error = req.flash('error')[0];
+  res.render('resetPasswordVerificationCode', { error, email });
+});
+
+//process verification code
+router.post('/login/resetpassword/verify', (req, res, next) => {
+  let { email, passcode } = req.body;
+  console.log(email);
+  User.findOne({ email }, (err, user) => {
+    if (err) return next(err);
+    if (passcode == user.random) {
+      return res.redirect(`/users/login/resetpassword/${email}`);
+    } else {
+      req.flash('error', 'Enter the correct verification code');
+      res.redirect('/users/login/resetpassword/verify');
+    }
+  });
+});
+
+//render reset password page
+router.get('/login/resetpassword/:email', (req, res, next) => {
+  let email = req.params.email;
+  let error = req.flash('error')[0];
+  res.render('resetPassword', { error, email });
+});
+
+//reset password
+router.post('/login/resetpassword', (req, res, next) => {
+  let { email, newPasswd1, newPasswd2 } = req.body;
+  if (newPasswd1 === newPasswd2) {
+    User.findOne({ email }, (err, user) => {
+      console.log(user);
+      if (err) return next(user);
+      bcrypt.hash(newPasswd1, 10, (err, hashed) => {
+        if (err) return next(err);
+        req.body.password = hashed;
+        User.findOneAndUpdate({ email }, req.body, (err, user) => {
+          if (err) return next(err);
+          console.log('info', 'Password is Successfully Changed');
+          return res.redirect('/users/login');
+        });
+      });
+    });
+  } else {
+    console.log('error', 'Password does not match');
+    req.flash('error', 'Password does not match');
+    res.redirect('/users/login/resetpassword');
+  }
+});
 
 module.exports = router;
