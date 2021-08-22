@@ -44,7 +44,7 @@
       </form>
     </div>
     <section>
-      <form action="/category/bothSort" method="POST">
+      <form action="/category/bothSort" , method="POST">
         <legend>Date & category Sort</legend>
         <input name="start_date" placeholder="start_date" type="date" />
         <input name="end_date" placeholder="end_date" type="date" />
@@ -68,5 +68,11 @@
       </form>
     </section>
     <%if(income||expense){%> <%=income%> <%=expense%> <%}%>
+    <section>
+      <p>
+        Total savings for the current results are <%=addIncome%> -
+        <%=addExpense%> = <%= totalSavings%>
+      </p>
+    </section>
   </body>
 </html>

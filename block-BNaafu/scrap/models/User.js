@@ -5,42 +5,35 @@ var passportLocalMongoose = require('passport-local-mongoose');
 var userSchema = new Schema(
   {
     email: { type: String, required: true, unique: true },
-    github: {
-      name: String,
-      username: String,
-      image: String,
-    },
-    google: {
-      name: String,
-      username: String,
-      image: String,
-    },
-    username: { type: String },
+    username: { type: String, required: true },
     password: { type: String },
     isVerified: { type: Boolean },
     emailToken: { type: String },
     random: { type: Number },
-    providers: [String],
-    expenseId: [{ type: Schema.Types.ObjectId, ref: 'Expense' }],
-    incomeId: [{ type: Schema.Types.ObjectId, ref: 'Income' }],
   },
   { timestamps: true }
 );
 userSchema.plugin(passportLocalMongoose);
-
 userSchema.pre('save', function (next) {
+  console.log(this, this.password);
   if (this.password && this.isModified('password')) {
+    console.log('inside if');
     bcrypt.hash(this.password, 10, (err, hashed) => {
       if (err) return next(err);
+      console.log('some');
       this.password = hashed;
-      return next();
+      next();
     });
   } else {
+    console.log('some2');
     next();
   }
 });
-
+userSchema.methods.fullName = function () {
+  return this.firstname + ' ' + this.lastname;
+};
 userSchema.methods.verifyPassword = function (password, cb) {
+  console.log(password, this.password, this.hash);
   bcrypt.compare(password, this.password, (err, result) => {
     return cb(err, result);
   });
