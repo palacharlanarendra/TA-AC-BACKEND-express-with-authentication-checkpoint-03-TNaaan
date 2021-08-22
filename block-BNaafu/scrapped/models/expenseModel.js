@@ -5,7 +5,7 @@ var expenseSchema = new Schema(
   {
     category: { type: String },
     expenseAmount: { type: Number },
-    expenseDate: { type: Date },
+    expenseDate: { type: String },
     userEmail: { type: String },
     userId: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
   },

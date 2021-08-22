@@ -1,6 +1,5 @@
 var express = require('express');
 var passport = require('passport');
-var flash = require('connect-flash');
 var crypto = require('crypto');
 const nodemailer = require('nodemailer');
 var router = express.Router();
@@ -8,11 +7,46 @@ var User = require('../models/User');
 var auth = require('../middleware/auth');
 var mg = require('nodemailer-mailgun-transport');
 var bcrypt = require('bcrypt');
-
+var Income = require('../models/incomeModel');
+var Expense = require('../models/expenseModel');
+// const { isLoggedIn, isNotVerified } = require('../middleware/auth');
 /* GET users listing. */
+
+// router.get('/', function (req, res, next) {
+//   Event.find({}, (err, events) => {
+//     if (err) return next(err);
+//     var allCategories = [];
+//     events.filter((event) => {
+//       var some = event.event_category.split(',');
+//       for (var i = 0; i < some.length; i++) {
+//         if (!allCategories.includes(some[i])) {
+//           allCategories.push(some[i]);
+//         }
+//       }
+//     });
+
+//     var allLocations = [];
+//     events.filter((event) => {
+//       if (!allLocations.includes(event.location)) {
+//         allLocations.push(event.location);
+//       }
+//     });
+//     res.render('eventsPage', {
+//       events: events,
+//       allCategories: allCategories,
+//       allLocations: allLocations,
+//     });
+//   });
+// });
 router.get('/register', function (req, res, next) {
   res.render('register');
 });
+
+// router.post('/register', (req, res, next) => {
+//   User.create(req.body, (err, user) => {
+//     res.redirect('/users/login');
+//   });
+// });
 
 router.post('/register', async (req, res) => {
   var user = new User({
@@ -30,8 +64,8 @@ router.post('/register', async (req, res) => {
     } else if (user) {
       var auth = {
         auth: {
-          api_key: process.env.API_KEY,
-          domain: process.env.DOMAIN,
+          api_key: 'e3f5c6af9ef54c78bc42d4fcc50b141b-9776af14-a41f0cf7',
+          domain: 'sandbox03b142d3cfc04b00a69601d317b5a6d3.mailgun.org',
         },
       };
 
@@ -52,7 +86,7 @@ router.post('/register', async (req, res) => {
             return res.redirect('/');
           } else {
             console.log('email Sent');
-            return res.send('verification link sent to your mail');
+            return res.redirect('/users/login');
           }
         }
       );
@@ -61,7 +95,6 @@ router.post('/register', async (req, res) => {
 });
 
 router.get('/verify-email', async (req, res, next) => {
-  console.log(req.session);
   try {
     const user = await User.findOne({ emailToken: req.query.token });
     if (!user) {
@@ -74,8 +107,9 @@ router.get('/verify-email', async (req, res, next) => {
     await req.login(user, async (err) => {
       if (err) return next(err);
       req.flash('success', `Welcome to the website ${user.username}`);
-
-      res.redirect('/');
+      const redirectUrl = req.session.redirectTo || '/';
+      delete req.session.redirectTo;
+      res.redirect(redirectUrl);
     });
   } catch (error) {
     console.log(error);
@@ -91,50 +125,49 @@ router.get('/login', function (req, res, next) {
   res.render('login');
 });
 
-// router.post('/login', function (req, res, next) {
-//   passport.authenticate('local', function (err, user, info) {
-//     console.log('mmmmmmmm', user);
-//     if (user) {
-//       return res.redirect(`/success`);
-//     }
-//     return res.redirect('/users/login');
-//   })(req, res, next);
-// });
-// router.post(
-//   '/login',
-//   passport.authenticate('local', { failureRedirect: '/login' }),
-//   function (req, res) {
-//     res.redirect('/');
-//   }
-// );
-//normal login
-router.post('/login', (req, res, next) => {
-  var { email, password } = req.body;
-  console.log(email, password);
-  if (!email || !password) {
-    return res.redirect('/users/login');
-  }
+//right now working
+
+router.get('/loginSuccess/:email', function (req, res, next) {
+  var email = req.params.email;
+  var userEmail = email;
+  var allCategories = [];
   User.findOne({ email }, (err, user) => {
-    if (err) return next(err);
-    if (!user) {
-      return res.redirect('/users/login');
-    }
-    user.verifyPassword(password, (err, result) => {
-      if (err) return next(err);
-      console.log(result);
-      if (!result) {
-        console.log(password);
-        return res.redirect('/users/login');
-      }
-      req.session.userId = user.id;
-      res.redirect('/success');
+    Income.find({ userEmail }, (err, income) => {
+      income.filter((event) => {
+        var some = event.source.split(',');
+        for (var i = 0; i < some.length; i++) {
+          if (!allCategories.includes(some[i])) {
+            allCategories.push(some[i]);
+          }
+        }
+      });
+      Expense.find({ userEmail }, (err, expense) => {
+        expense.filter((event) => {
+          var some = event.category.split(',');
+          for (var i = 0; i < some.length; i++) {
+            if (!allCategories.includes(some[i])) {
+              allCategories.push(some[i]);
+            }
+          }
+        });
+        res.render('success', { user, expense, income, email, allCategories });
+      });
     });
   });
 });
 
+router.post('/login', function (req, res, next) {
+  passport.authenticate('local', function (err, user, info) {
+    console.log('mmmmmmmm', user);
+    if (user) {
+      return res.redirect(`/users/loginSuccess/${user.email}`);
+    }
+    return res.redirect('/users/login');
+  })(req, res, next);
+});
+
 //render forgot password page
 router.get('/login/forgotpassword', (req, res, next) => {
-  console.log('get', req.session.user);
   let error = req.flash('error')[0];
   let info = req.flash('info')[0];
   res.render('forgotPassword', { error, info });
@@ -144,14 +177,13 @@ function random() {
 }
 //process forgot password
 router.post('/login/forgotpassword', (req, res, next) => {
-  console.log('post', req.session.user);
   var { email } = req.body;
   console.log('WWWWWWWWW', email);
   req.body.random = random();
   console.log(req.body.random);
   User.findOneAndUpdate({ email }, req.body, (err, user) => {
     if (err) return next(err);
-    var userId = user._id;
+
     if (!user) {
       req.flash(
         'error',
@@ -161,8 +193,8 @@ router.post('/login/forgotpassword', (req, res, next) => {
     }
     var auth = {
       auth: {
-        api_key: process.env.API_KEY,
-        domain: process.env.DOMAIN,
+        api_key: 'e3f5c6af9ef54c78bc42d4fcc50b141b-9776af14-a41f0cf7',
+        domain: 'sandbox03b142d3cfc04b00a69601d317b5a6d3.mailgun.org',
       },
     };
 
@@ -174,7 +206,7 @@ router.post('/login/forgotpassword', (req, res, next) => {
         to: req.body.email,
         subject: 'password change',
         html: `<h1>${req.body.random}</h1>
-       <h2>Please Copy above 6 digit number and click this link http://localhost:3000/users/login/resetpassword/verify/${userId} </h2>`,
+       <h2>Please Copy above 6 digit number and click this link http://localhost:3000/users/login/resetpassword/verify/${req.body.email} </h2>`,
       },
       function (err, info) {
         if (err) {
@@ -190,26 +222,22 @@ router.post('/login/forgotpassword', (req, res, next) => {
 });
 
 //render reset password verification code page
-router.get('/login/resetpassword/verify/:id', (req, res, next) => {
-  var id = req.params.id;
+router.get('/login/resetpassword/verify/:slug', (req, res, next) => {
+  var email = req.params.slug;
 
+  console.log(email, 'something');
   let error = req.flash('error')[0];
-
-  res.render('resetPasswordVerificationCode', { error, id });
+  res.render('resetPasswordVerificationCode', { error, email });
 });
 
 //process verification code
 router.post('/login/resetpassword/verify', (req, res, next) => {
-  let { userId, passcode } = req.body;
-  console.log(userId);
-  var id = userId;
-  console.log('post', id);
-  req.session.id = id;
-  console.log(req.session);
-  User.findOne({ _id: id }, (err, user) => {
+  let { email, passcode } = req.body;
+  console.log(email);
+  User.findOne({ email }, (err, user) => {
     if (err) return next(err);
     if (passcode == user.random) {
-      return res.redirect(`/users/login/resetpassword/${id}`);
+      return res.redirect(`/users/login/resetpassword/${email}`);
     } else {
       req.flash('error', 'Enter the correct verification code');
       res.redirect('/users/login');
@@ -218,24 +246,23 @@ router.post('/login/resetpassword/verify', (req, res, next) => {
 });
 
 //render reset password page
-router.get('/login/resetpassword/:id', (req, res, next) => {
-  let id = req.params.id;
+router.get('/login/resetpassword/:email', (req, res, next) => {
+  let email = req.params.email;
   let error = req.flash('error')[0];
-  res.render('resetPassword', { error, id });
+  res.render('resetPassword', { error, email });
 });
 
 //reset password
 router.post('/login/resetpassword', (req, res, next) => {
-  let { id, newPasswd1, newPasswd2 } = req.body;
-  console.log(id, newPasswd1, newPasswd2);
+  let { email, newPasswd1, newPasswd2 } = req.body;
   if (newPasswd1 === newPasswd2) {
-    User.findOne({ _id: id }, (err, user) => {
+    User.findOne({ email }, (err, user) => {
       console.log(user);
       if (err) return next(user);
       bcrypt.hash(newPasswd1, 10, (err, hashed) => {
         if (err) return next(err);
         req.body.password = hashed;
-        User.findOneAndUpdate({ _id: id }, req.body, (err, user) => {
+        User.findOneAndUpdate({ email }, req.body, (err, user) => {
           if (err) return next(err);
           console.log('info', 'Password is Successfully Changed');
           return res.redirect('/users/login');

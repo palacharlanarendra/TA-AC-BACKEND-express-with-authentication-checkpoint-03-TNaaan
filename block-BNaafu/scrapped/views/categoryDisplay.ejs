@@ -4,15 +4,15 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/stylesheets/style.css" />
     <title>Document</title>
   </head>
   <body>
     <p>success</p>
-    <a href="/logout">
-      <p>logout</p>
-    </a>
+    <div><a href="/logout">logout</a></div>
     <div>
-      <form action="/dashboard/income/" method="POST">
+      <p><%=email%></p>
+      <form action="/dashboard/income/<%=email%>" method="POST">
         <legend>Add Income data</legend>
         <input type="text" name="source" placeholder="Enter source" />
         <input type="number" name="incomeAmount" placeholder="Enter amount" />
@@ -21,7 +21,7 @@
       </form>
     </div>
     <div>
-      <form action="/dashboard/expense" method="POST">
+      <form action="/dashboard/expense/<%=email%>" , method="POST">
         <legend>Add expense data</legend>
         <input type="text" name="category" placeholder="Enter category" />
         <input type="number" name="expenseAmount" placeholder="Enter amount" />
@@ -29,22 +29,8 @@
         <input type="submit" name="submit" value="add" />
       </form>
     </div>
-    <%allCategories.forEach((category)=>{%>
-    <a href="/category/?name=<%=category%>">
-      <button><%= category%></button>
-    </a>
-
-    <%})%>
-    <div>
-      <form action="/category/dateSort" , method="POST">
-        <legend>Date Sort</legend>
-        <input name="start_date" placeholder="start_date" type="date" />
-        <input name="end_date" placeholder="end_date" type="date" />
-        <input type="submit" name="submit" value="search" />
-      </form>
-    </div>
     <section>
-      <form action="/category/bothSort" method="POST">
+      <form action="/category/bothSort" , method="POST">
         <legend>Date & category Sort</legend>
         <input name="start_date" placeholder="start_date" type="date" />
         <input name="end_date" placeholder="end_date" type="date" />
@@ -57,16 +43,33 @@
       </form>
     </section>
     <section>
-      <form action="/dashboard/date" method="POST">
-        <legend>Month</legend>
-        <input
-          type="month"
-          name="month"
-          class="p-2 bg-gray-200 my-1 rounded-lg border-2 border-gray-300"
-        />
-        <input type="submit" name="submit" value="search" />
-      </form>
+      <%allCategories.forEach(event=>{%>
+      <a href="/category/<%= event%>">
+        <button><%= event%></button>
+      </a>
+      <%})%>
     </section>
-    <%if(income||expense){%> <%=income%> <%=expense%> <%}%>
+    <section>
+      <%if(flag){%>
+      <article>
+        <%income.forEach((income)=>{%>
+        <h3><%=income.source%></h3>
+        <p><%=income.incomeAmount%></p>
+        <p><%=income.incomeDate%></p>
+        <%})%>
+      </article>
+      <%}%>
+    </section>
+    <section>
+      <%if(!flag){%>
+      <article>
+        <%expense.forEach((expense)=>{%>
+        <h3><%=expense.category%></h3>
+        <p><%=expense.expenseAmount%></p>
+        <p><%=expense.expenseDate%></p>
+        <%})%>
+      </article>
+      <%}%>
+    </section>
   </body>
 </html>
