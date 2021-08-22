@@ -7,13 +7,19 @@
   <body>
     <h1><%= title %></h1>
     <p>Welcome to <%= title %></p>
-    <a href="/auth/github">Login with github</a>
-    <a href="/auth/google">Login with google</a>
+    <a href="/auth/google">
+      <p>login with google</p>
+    </a>
+    <a href="/auth/github">
+      <p>login with github</p>
+    </a>
     <div>
-      <a href="users/register">Register User</a>
-    </div>
-    <div>
-      <a href="users/login">Login User</a>
+      <a href="users/login">
+        <button>Login</button>
+      </a>
+      <a href="users/register">
+        <button>register</button>
+      </a>
     </div>
   </body>
 </html>
