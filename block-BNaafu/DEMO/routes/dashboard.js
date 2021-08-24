@@ -3,6 +3,7 @@ var router = express.Router();
 var Income = require('../models/incomeModel');
 var Expense = require('../models/expenseModel');
 var User = require('../models/User');
+var moment = require('moment');
 router.post('/income', (req, res, next) => {
   var id = req.session.userId || req.session.passport.user;
   req.body.userId = id;
@@ -38,6 +39,7 @@ router.post('/expense', (req, res, next) => {
   });
 });
 router.post('/date', (req, res, next) => {
+  var id = req.session.userId || req.session.passport.user;
   let expense = [];
   let income = [];
   let year = req.body.month.split('-')[0];
@@ -54,7 +56,7 @@ router.post('/date', (req, res, next) => {
   );
   var allCategories = [];
   console.log('something', firstDay, lastDay);
-  Income.find({}, (err, events) => {
+  Income.find({ userId: id }, (err, events) => {
     events.filter((event) => {
       // console.log(event);
       var some = event.source.split(',');
@@ -65,7 +67,7 @@ router.post('/date', (req, res, next) => {
       }
     });
   });
-  Expense.find({}, (err, events) => {
+  Expense.find({ userId: id }, (err, events) => {
     events.filter((event) => {
       // console.log(event);
       var some = event.category.split(',');
@@ -82,18 +84,24 @@ router.post('/date', (req, res, next) => {
         $gt: firstDay,
         $lte: lastDay,
       },
-      userId: req.user.id,
+      userId: id,
     },
     (err, income) => {
+      var newIncomeDate = moment(income.incomeDate).format(
+        'dddd, MMMM Do YYYY'
+      );
       Expense.find(
         {
           expenseDate: {
             $gt: firstDay,
             $lte: lastDay,
           },
-          userId: req.user.id,
+          userId: id,
         },
         (err, expense) => {
+          var newExpenseDate = moment(expense.expenseDate).format(
+            'dddd, MMMM Do YYYY'
+          );
           console.log(income, expense);
           if (err) return next(err);
           let addExpense = expense.reduce(
@@ -112,6 +120,8 @@ router.post('/date', (req, res, next) => {
             addExpense,
             totalSavings,
             allCategories: allCategories,
+            newIncomeDate,
+            newExpenseDate,
           });
         }
       );

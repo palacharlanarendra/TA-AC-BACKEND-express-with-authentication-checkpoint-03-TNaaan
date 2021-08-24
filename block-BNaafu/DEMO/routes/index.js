@@ -5,6 +5,7 @@ var auth = require('../middleware/auth');
 var User = require('../models/User');
 var Expense = require('../models/expenseModel');
 var Income = require('../models/incomeModel');
+var moment = require('moment');
 /* GET home page. */
 router.get('/', function (req, res, next) {
   res.render('index', { title: 'Express' });
@@ -27,6 +28,9 @@ router.get('/success', auth.isLoggedIn, function (req, res, next) {
       userId: id,
     },
     (err, income) => {
+      var newIncomeDate = moment(income.incomeDate).format(
+        'dddd, MMMM Do YYYY'
+      );
       for (var i = 0; i < income.length; i++) {
         addIncome += income[i].incomeAmount;
       }
@@ -47,6 +51,9 @@ router.get('/success', auth.isLoggedIn, function (req, res, next) {
           userId: id,
         },
         (err, expense) => {
+          var newExpenseDate = moment(expense.expenseDate).format(
+            'dddd, MMMM Do YYYY'
+          );
           for (var i = 0; i < expense.length; i++) {
             addExpense += expense[i].expenseAmount;
           }
@@ -66,6 +73,8 @@ router.get('/success', auth.isLoggedIn, function (req, res, next) {
             addExpense,
             addIncome,
             totalSavings,
+            newExpenseDate,
+            newIncomeDate,
           });
         }
       );
