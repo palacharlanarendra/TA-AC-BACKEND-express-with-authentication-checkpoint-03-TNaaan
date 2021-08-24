@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <p>success</p>
+    <a href="/logout">
+      <p>logout</p>
+    </a>
+    <div>
+      <form action="/dashboard/income/" method="POST">
+        <legend>Add Income data</legend>
+        <input type="text" name="source" placeholder="Enter source" />
+        <input type="number" name="incomeAmount" placeholder="Enter amount" />
+        <input type="date" name="incomeDate" />
+        <input type="submit" name="submit" value="add" />
+      </form>
+    </div>
+    <div>
+      <form action="/dashboard/expense" method="POST">
+        <legend>Add expense data</legend>
+        <input type="text" name="category" placeholder="Enter category" />
+        <input type="number" name="expenseAmount" placeholder="Enter amount" />
+        <input type="date" name="expenseDate" />
+        <input type="submit" name="submit" value="add" />
+      </form>
+    </div>
+    <%allCategories.forEach((category)=>{%>
+    <a href="/category/?name=<%=category%>">
+      <button><%= category%></button>
+    </a>
+
+    <%})%>
+    <div>
+      <form action="/category/dateSort" , method="POST">
+        <legend>Date Sort</legend>
+        <input name="start_date" placeholder="start_date" type="date" />
+        <input name="end_date" placeholder="end_date" type="date" />
+        <input type="submit" name="submit" value="search" />
+      </form>
+    </div>
+    <section>
+      <form action="/category/bothSort" , method="POST">
+        <legend>Date & category Sort</legend>
+        <input name="start_date" placeholder="start_date" type="date" />
+        <input name="end_date" placeholder="end_date" type="date" />
+        <select name="category" id="category">
+          <%allCategories.forEach(event=>{%>
+          <option value="<%= event%>"><%= event%></option>
+          <%})%>
+        </select>
+        <input type="submit" name="submit" value="search" />
+      </form>
+    </section>
+    <section>
+      <form action="/dashboard/date" method="POST">
+        <legend>Month</legend>
+        <input
+          type="month"
+          name="month"
+          class="p-2 bg-gray-200 my-1 rounded-lg border-2 border-gray-300"
+        />
+        <input type="submit" name="submit" value="search" />
+      </form>
+    </section>
+    <%if(income||expense){%> <%=income%> <%=expense%> <%}%>
+    <section>
+      <p>
+        Total savings for the current results are <%=addIncome%> -
+        <%=addExpense%> = <%= totalSavings%>
+      </p>
+    </section>
+  </body>
+</html>

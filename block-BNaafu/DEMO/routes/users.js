@@ -5,7 +5,6 @@ var crypto = require('crypto');
 const nodemailer = require('nodemailer');
 var router = express.Router();
 var User = require('../models/User');
-var auth = require('../middleware/auth');
 var mg = require('nodemailer-mailgun-transport');
 var bcrypt = require('bcrypt');
 
